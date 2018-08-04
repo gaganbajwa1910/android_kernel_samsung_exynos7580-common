@@ -1065,4 +1065,3 @@ enum mc_result mc_get_session_error_code(struct mc_session_handle *session,
 	return mc_result;
 }
 EXPORT_SYMBOL(mc_get_session_error_code);
-
