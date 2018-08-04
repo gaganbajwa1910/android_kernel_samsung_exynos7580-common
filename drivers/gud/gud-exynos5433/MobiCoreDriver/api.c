@@ -115,4 +115,3 @@ bool mobicore_sleep_ready(void)
 	return mc_sleep_ready();
 }
 EXPORT_SYMBOL(mobicore_sleep_ready);
-
