@@ -660,11 +660,11 @@ static int encrypted_key_decrypt(struct encrypted_key_payload *epayload,
 {
 	struct key *mkey;
 	u8 derived_key[HASH_SIZE];
-	u8 *master_key;
+	u8 *master_key = NULL;
 	u8 *hmac;
 	const char *hex_encoded_data;
 	unsigned int encrypted_datalen;
-	size_t master_keylen;
+	size_t master_keylen = 0;
 	size_t asciilen;
 	int ret;
 
@@ -854,7 +854,7 @@ static int encrypted_update(struct key *key, struct key_preparsed_payload *prep)
 
 	if (test_bit(KEY_FLAG_NEGATIVE, &key->flags))
 		return -ENOKEY;
-	if (datalen <= 0 || datalen > 32767 || !data)
+	if (datalen <= 0 || datalen > 32767 || !prep->data)
 		return -EINVAL;
 
 	buf = kmalloc(datalen + 1, GFP_KERNEL);
@@ -905,8 +905,8 @@ static long encrypted_read(const struct key *key, char __user *buffer,
 {
 	struct encrypted_key_payload *epayload;
 	struct key *mkey;
-	u8 *master_key;
-	size_t master_keylen;
+	u8 *master_key = NULL;
+	size_t master_keylen = 0;
 	char derived_key[HASH_SIZE];
 	char *ascii_buf;
 	size_t asciiblob_len;
