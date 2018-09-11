@@ -143,8 +143,6 @@ static void arm64_memory_present(void)
 
 void __init arm64_memblock_init(void)
 {
-	u64 *reserve_map, base, size;
-
 	/* Register the kernel text, kernel data and initrd with memblock */
 	memblock_reserve(__pa(_text), _end - _text);
 #ifdef CONFIG_BLK_DEV_INITRD
@@ -158,25 +156,6 @@ void __init arm64_memblock_init(void)
 	 */
 	memblock_reserve(__pa(swapper_pg_dir), SWAPPER_DIR_SIZE);
 	memblock_reserve(__pa(idmap_pg_dir), IDMAP_DIR_SIZE);
-
-	/* Reserve the dtb region */
-	memblock_reserve(virt_to_phys(initial_boot_params),
-			 be32_to_cpu(initial_boot_params->totalsize));
-
-	/*
-	 * Process the reserve map.  This will probably overlap the initrd
-	 * and dtb locations which are already reserved, but overlapping
-	 * doesn't hurt anything
-	 */
-	reserve_map = ((void*)initial_boot_params) +
-			be32_to_cpu(initial_boot_params->off_mem_rsvmap);
-	while (1) {
-		base = be64_to_cpup(reserve_map++);
-		size = be64_to_cpup(reserve_map++);
-		if (!size)
-			break;
-		memblock_reserve(base, size);
-	}
 
 	early_init_fdt_scan_reserved_mem();
 	dma_contiguous_reserve(0);
@@ -203,14 +182,6 @@ void __init bootmem_init(void)
 
 	high_memory = __va((max << PAGE_SHIFT) - 1) + 1;
 	max_pfn = max_low_pfn = max;
-}
-
-/*
- * Poison init memory with an undefined instruction (0x0).
- */
-static inline void poison_init_mem(void *s, size_t count)
-{
-	memset(s, 0, count);
 }
 
 #ifndef CONFIG_SPARSEMEM_VMEMMAP
@@ -392,7 +363,6 @@ void __init mem_init(void)
 
 void free_initmem(void)
 {
-	poison_init_mem(__init_begin, __init_end - __init_begin);
 	free_initmem_default(0);
 }
 
@@ -402,10 +372,8 @@ static int keep_initrd;
 
 void free_initrd_mem(unsigned long start, unsigned long end)
 {
-	if (!keep_initrd) {
-		poison_init_mem((void *)start, PAGE_ALIGN(end) - start);
+	if (!keep_initrd)
 		free_reserved_area(start, end, 0, "initrd");
-	}
 }
 
 static int __init keepinitrd_setup(char *__unused)
